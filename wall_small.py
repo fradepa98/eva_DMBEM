@@ -46,20 +46,20 @@ h_out = Nu*k_air/L
 
 h = pd.DataFrame([{'in': 4., 'out': h_out}])
 
-S_wall = 10*2.5 + 25
+S_wall = 10*2.5
 V_air = 9.6 * 9.6 * 3 + ((10/math.sqrt(2))*9.6*0.5)  # m³
 
 # conduction
 R_cd = wall['Width'] / (wall['Conductivity'] * S_wall)
 
 # convection
-R_cv = 1 / (h * S_wall_big)
+R_cv = 1 / (h * S_wall)
 
 # thermal capacity big wall
 C_wall = wall['Density'] * wall['Specific heat'] * wall['Width'] * S_wall
 
 # number of temperature nodes and flow branches
-no_t = no_q = sum(wall['Slices']) + 1
+no_t = no_q = sum(wall['Slices'][1:3]) + 1
 
 # Conductance matrix
 R = np.zeros([no_q])
@@ -70,31 +70,18 @@ R[3] = R_cd['Insulation'] / 2
 R[4] = R_cd['Insulation'] / 4 + R_cd['Oak']/4
 R[5] = R_cd['Oak'] / 2
 R[6] = R_cd['Oak'] / 4 + R_cv['in']
-G = np.diag(np.reciprocal(R))
+G_small = np.diag(np.reciprocal(R))
 
 # Capacity matrix
-C = np.zeros(no_t)
-C = np.diag([0,C_wall['Beech'],0,C_wall['Insulation'],0,C_wall['Oak'],0])
-C_det = np.linalg.det(C)
+C_small = np.zeros(no_t)
+C_small = np.diag([0,C_wall['Beech'],0,C_wall['Insulation'],0,C_wall['Oak'],0])
 
 # Arc-node matrix A
-A = np.eye(no_q, no_t + 1)
-A = -np.diff(A, n=1, axis=1)
+A_small = np.eye(no_q, no_t + 1)
+A_small = -np.diff(A_small, n=1, axis=1)
 
 # Source vectors
-b = np.zeros(no_q)     # temperature sources
-f = np.zeros(no_t)     # heat flow sources
+b_small = np.zeros(no_q)     # temperature sources
+f_small = np.zeros(no_t)     # heat flow sources
 
-# Steady state solution with fixed outdoor temperature
-b[0] = -4
-temp_steady_To = np.linalg.inv(A.T @ G @ A) @ (A.T @ G @ b + f)
-np.set_printoptions(precision=3)
-print('When To = -4°C, the temperatures in steady-state are:', temp_steady_To, '°C')
-print(f'The indoor temperature is: {temp_steady_To[-1]:.3f} °C')
 
-# Steady state solution with additional indoor heat flux
-b[0] = -4
-f[-1] = 100
-temp_steady_Qh = np.linalg.inv(A.T @ G @ A) @ (A.T @ G @ b + f)
-print('When Qh = 10, the temperatures in steady-state are:', temp_steady_Qh, '°C')
-print(f'The indoor temperature is: {temp_steady_Qh[-1]:.3f} °C')

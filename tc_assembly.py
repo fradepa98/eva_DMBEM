@@ -13,29 +13,29 @@ import math
 from dm4bem import read_epw, sol_rad_tilt_surf
 import tuto
 
-rad_E = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_E.csv')
+rad_E = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_E.csv')
 
-rad_ER = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_ER.csv')
+rad_ER = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_ER.csv')
 
-rad_G = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_G.csv')
+rad_G = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_G.csv')
 
-rad_N = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_N.csv')
+rad_N = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_N.csv')
 
-rad_S = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_S.csv')
+rad_S = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_S.csv')
 
-rad_W = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_W.csv')
+rad_W = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_W.csv')
 
-rad_WR = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\tot_rad_WR.csv')
+rad_WR = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_WR.csv')
 
-T_out = pd.read_csv(r'C:\Users\Mario\Desktop\ZHAW_modules\HS2021\EVA_DMBEM\depalfra_project\T_out.csv')
+T_out = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\T_out.csv')
 
 
 #%% Physical properties
 # ===================
 wall = {'Conductivity': [0.18,0.040,0.12,0.08,1.4],
-        'Density': [800, 16, 600,2000,2500],
-        'Specific heat': [2385, 1210, 2385,920,750],
-        'Width': [0.1, 0.2, 0.1, 0.2,0.02],
+        'Density': [800, 16, 600, 2000, 2500],
+        'Specific heat': [2385, 1210, 2385, 920, 750],
+        'Width': [0.1, 0.2, 0.1, 0.2, 0.02],
         'Slices': [ 2, 2, 2, 2, 1]}
 
 wall = pd.DataFrame(wall, index=['Beech', 'Insulation', 'Oak','Brick','Glass'])
@@ -76,7 +76,7 @@ V_air = 9.6 * 9.6 * 3 + ((10/math.sqrt(2))*9.6*0.5)  # m³
 m_dot = 0.3*V_air*air['Density']/3600
 
 Gv = air['Specific heat']*m_dot
-Kp = 1
+Kp = 1000
 Qa = 2000
 Ca = air['Density'] * air['Specific heat'] * V_air
 
@@ -130,7 +130,8 @@ f = np.zeros(no_t)     # heat flow sources
 # f_W[0] = rad_W
 # f_W[-1] = 0.85*rad_S/6
 
-f[0] = f[-1] = 1
+f[0] = 1
+f[-1] = 1
 
 b[0] = 1
 
@@ -224,8 +225,10 @@ A_glass = -np.diff(A_glass, n=1, axis=1)
 
 b_glass = np.zeros(no_q)
 f_glass = np.zeros(no_t)
+y_glass = np.zeros(no_t)
 
 b_glass[0] = 1
+y_glass[-1] = 1
 
 
 #%% Convection Circuit
@@ -257,6 +260,7 @@ b_cv = np.zeros(no_q)
 f_cv = np.zeros(no_t)
 y_cv = np.zeros(no_t)
 y_cv[-1] = 1;
+# f_cv[1] = f_cv[3] = f_cv[4] = f_cv[5] = f_cv[0] = 1/2
 #%% Ventilation and Control
 
 A_vc = np.array([[1],
@@ -275,7 +279,7 @@ TC_East_wall = {'A': A, 'G': G_small, 'b': b, 'C': C_small, 'f': f, 'y': y}
 
 TC_West_wall = {'A': A, 'G': G_small, 'b': b, 'C': C_small, 'f': f, 'y': y}
 
-TC_South_wall = {'A': A_glass, 'G': G_glass, 'b': b_glass, 'C': C_glass, 'f': f_glass, 'y': y}
+TC_South_wall = {'A': A_glass, 'G': G_glass, 'b': b_glass, 'C': C_glass, 'f': f_glass, 'y': y_glass}
 
 TC_East_roof = {'A': A, 'G': G_roof, 'b': b, 'C': C_roof, 'f': f, 'y': y}
 
@@ -313,13 +317,13 @@ TCd = {'0': TC_North_wall,
 
 # Assembling matrix
 
-AssX = np.array([[0, 6, 1, 6],
-                   [0, 6, 2, 1],
-                   [0, 6, 3, 6],
-                   [0, 6, 4, 6],
-                   [0, 6, 5, 6],
-                   [0, 6, 6, 6],
-                   [0, 6, 7, 0]])
+AssX = np.array([[0, 6, 6, 0],
+                   [1, 6, 6, 1],
+                   [2, 1, 6, 2],
+                   [3, 6, 6, 3],
+                   [4, 6, 6, 4],
+                   [5, 6, 6, 5],
+                   [6, 6, 7, 0]])
 
 
 TCa = dm4bem.TCAss(TCd, AssX)

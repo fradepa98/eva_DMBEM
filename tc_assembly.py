@@ -14,18 +14,25 @@ from dm4bem import read_epw, sol_rad_tilt_surf
 import tuto
 
 rad_E = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_E.csv')
+rad_E.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_ER = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_ER.csv')
+rad_ER.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_G = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_G.csv')
+rad_G.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_N = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_N.csv')
+rad_N.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_S = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_S.csv')
+rad_S.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_W = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_W.csv')
+rad_W.rename(columns={'0': 'WData'}, inplace=True)
 
 rad_WR = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\tot_rad_WR.csv')
+rad_WR.rename(columns={'0': 'WData'}, inplace=True)
 
 T_out = pd.read_csv(r'C:\Users\Admin\OneDrive - Politecnico di Milano\Documenti\SCooL_Pro\ZHAW\DM4BEM\dm4bem-main\dm4bem-main\T_out.csv')
 
@@ -64,8 +71,6 @@ Nu = 0.1*(Ra**(1/3))
 h_out = Nu*k_air/L 
 
 h = pd.DataFrame([{'in': 4., 'out': h_out}])
-
-
 #%% Big Walls
 
 S_wall_big = 10*2.5 + 25
@@ -78,6 +83,10 @@ m_dot = 0.3*V_air*air['Density']/3600
 Gv = air['Specific heat']*m_dot
 Kp = 1000
 Qa = 2000
+Qpp = 360
+tau = 0.85
+alpha_wood = 
+alpha_beech =
 Ca = air['Density'] * air['Specific heat'] * V_air
 
 # conduction
@@ -136,7 +145,6 @@ f[-1] = 1
 b[0] = 1
 
 y = np.zeros(no_t)
-
 #%% Small wall
 
 print(no_q)
@@ -265,7 +273,7 @@ y_cv[-1] = 1;
 
 A_vc = np.array([[1],
                   [1]])
-G_vc = np.diag(np.array([Gv, Kp]))
+G_vc = np.diag(np.array([Gv, 1e-3]))
 b_vc = np.array([1, 1])
 C_vc = np.array([Ca/2])
 f_vc = 1
@@ -344,7 +352,7 @@ dtmax = min(-2. / np.linalg.eig(As)[0])
 print(f'Maximum time step: {dtmax:.2f} s')
 
 #%% Step Response: Temperature
-dt = 50
+dt = 100
 duration = 24*3600       # [s]
 
 days = T_out.shape[0] / 24
@@ -358,7 +366,7 @@ no_T = int(Bs.shape[1])
 # time
 t = np.arange(0, n * dt, dt)
 
-fig, axs = plt.subplots(2, 2)
+fig1, axs1 = plt.subplots(2, 2)
 
 u = np.block([[np.ones([8, n])],
               [np.zeros([11, n])]])
@@ -372,8 +380,8 @@ for k in range(t.shape[0] - 1):
     temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
         (temp_imp[:, k] + dt * Bs @ u[:, k])
 
-axs[0, 0].plot(t / 3600, temp_exp[-1, :], t / 3600, temp_imp[-1, :])
-axs[0, 0].set(ylabel='Air temperature [°C]', title='Step input: To')              
+axs1[0, 0].plot(t / 3600, temp_exp[-1, :], t / 3600, temp_imp[-1, :])
+axs1[0, 0].set(ylabel='Air temperature [°C]', title='Step input: To')              
 
 #%% Step Response: Heat Flow
 
@@ -389,8 +397,8 @@ for k in range(t.shape[0] - 1):
     temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
         (temp_imp[:, k] + dt * Bs @ u[:, k])
 
-axs[0, 1].plot(t / 3600, temp_exp[-1, :], t / 3600, temp_imp[-1, :])
-axs[0, 1].set(ylabel='Air temperature [°C]', title='Step input: Q_dot')              
+axs1[0, 1].plot(t / 3600, temp_exp[-1, :], t / 3600, temp_imp[-1, :])
+axs1[0, 1].set(ylabel='Air temperature [°C]', title='Step input: Q_dot')              
 
 #%% Simulation with weather Data
 
@@ -402,18 +410,17 @@ t = np.arange(0, 3600 * T_out.shape[0], dt)
 T0 = np.interp(t, tw, T_out['temp_air'])
 n_T = T0.shape[0]
 Tsp = 20*np.ones([1, n_T])
-Tm = (T0*Gv + Tsp*Kp)/(Gv + Kp)
-n_T = T0.shape[0]
 
-radN = np.interp(t, tw, rad_N['0'])
-radE = np.interp(t, tw, rad_E['0'])
-radS = np.interp(t, tw, rad_S['0'])
-radW = np.interp(t, tw, rad_W['0'])
-radER = np.interp(t, tw, rad_ER['0'])
-radWR = np.interp(t, tw, rad_WR['0'])
+radN = np.interp(t, tw, rad_N['WData'])
+radE = np.interp(t, tw, rad_E['WData'])
+radS = np.interp(t, tw, rad_S['WData'])
+radW = np.interp(t, tw, rad_W['WData'])
+radER = np.interp(t, tw, rad_ER['WData'])
+radWR = np.interp(t, tw, rad_WR['WData'])
 
 n_r = radS.shape[0]
-rad_in = Qa*np.ones([1, n_r]) + 0.85*radS/6
+radP = tau*radS/6 + Qpp*np.ones([1, n_r])
+rad_in = Qa*np.ones([1, n_r]) + radP
 
 u = np.block([[T0],
               [T0],
@@ -423,16 +430,16 @@ u = np.block([[T0],
               [T0],
               [T0],
              [Tsp],
-             [radN],
-             [0.85*radS/6],
-             [radE],
-             [0.85*radS/6],
-             [radW],
-             [0.85*radS/6],
-             [radER],
-             [0.85*radS/6],
-             [radWR],
-             [0.85*radS/6],
+             [alpha_wood*radN],
+             [tau*radS/6],
+             [alpha_wood*radE],
+             [tau*radS/6],
+             [alpha_wood*radW],
+             [tau*radS/6],
+             [alpha_beech*radER],
+             [tau*radS/6],
+             [alpha_beech*radWR],
+             [tau*radS/6],
              [rad_in]])
 
 # initial values for temperatures obtained by explicit and implicit Euler
@@ -446,18 +453,116 @@ for k in range(n - 1):
         temp_exp[:, k] + dt * Bs @ u[:, k]
     temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
         (temp_imp[:, k] + dt * Bs @ u[:, k])
+        
 
-axs[1, 0].plot(t / 3600, temp_exp[-1, :],
+axs1[1, 0].plot(t / 3600, temp_exp[-1, :],
                t / 3600, T0)
-axs[1, 0].set_xlabel('Time [hours]')
-axs[1, 0].set_ylabel('Air temperature [°C]')
-axs[1, 0].set_title('Explicit Euler')
+axs1[1, 0].set_xlabel('Time [hours]')
+axs1[1, 0].set_ylabel('Air temperature [°C]')
+axs1[1, 0].set_title('Explicit Euler')
 
-axs[1, 1].plot(t / 3600, temp_imp[-1, :],
+axs1[1, 1].plot(t / 3600, temp_imp[-1, :],
                t / 3600, T0)
-axs[1, 1].set_xlabel('Time [hours]')
-axs[1, 1].set_ylabel('Air temperature [°C]')
-axs[1, 1].set_title('Implicit Euler')
+axs1[1, 1].set_xlabel('Time [hours]')
+axs1[1, 1].set_ylabel('Air temperature [°C]')
+axs1[1, 1].set_title('Implicit Euler')
+
+#%% Simulation with feedback control
+
+# initial values for temperatures obtained by explicit and implicit Euler
+temp_exp = np.zeros([no_t, n])
+temp_imp = np.zeros([no_t, n])
+temp_exp = np.zeros([no_t, t.shape[0]])
+temp_imp = np.zeros([no_t, t.shape[0]])
+
+Tisp = 20
+DeltaT = 1
+y = np.zeros(u.shape[1], dtype=object)
+y[0] = Tisp
+I = np.eye(As.shape[0])
+radP = radP.T
+
+for k in range(u.shape[1] - 1):
+    # print(k, y[k - 1], temp_exp[2, k])
+    if Tisp - DeltaT < y[k - 1] < DeltaT + Tisp:
+        u[18, k] = 0
+    else:
+        u[18, k] = Kp * (Tisp - y[k - 1])
+        if u[18, k] - radP[k] > 5000:
+            u[18, k] = 5000 + radP[k]
+        
+    temp_exp[:, k + 1] = (I + dt * As) @ temp_exp[:, k]\
+        + dt * Bs @ u[:, k]
+    y[k] = Cs[1, :] @ temp_exp[:, k] + Ds[1, :] @ u[:, k]
+    temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
+        (temp_imp[:, k] + dt * Bs @ u[:, k])
+        
+fig2, axs2 = plt.subplots(2, 2)
+
+q_HVAC = u[18, :] - radP
+
+axs2[1, 0].plot(t / 3600, temp_exp[-1, :],
+               t / 3600, T0)
+axs2[1, 0].set_xlabel('Time [hours]')
+axs2[1, 0].set_ylabel('Air temperature [°C]')
+axs2[1, 0].set_title('Explicit Euler')
+
+axs2[1, 1].plot(t / 3600, temp_imp[-1, :],
+               t / 3600, T0)
+axs2[1, 1].set_xlabel('Time [hours]')
+axs2[1, 1].set_ylabel('Air temperature [°C]')
+axs2[1, 1].set_title('Implicit Euler')
+
+
+#%% Simulation with predictive control
+
+# initial values for temperatures obtained by explicit and implicit Euler
+temp_exp = np.zeros([no_t, n])
+temp_imp = np.zeros([no_t, n])
+temp_exp = np.zeros([no_t, t.shape[0]])
+temp_imp = np.zeros([no_t, t.shape[0]])
+
+Tisp = 20
+DeltaT = 1
+y = np.zeros(u.shape[1], dtype=object)
+y[0] = Tisp
+I = np.eye(As.shape[0])
+
+for k in range(u.shape[1] - 1):
+    while (y[k] < Tisp or y[k] > DeltaT + Tisp) and abs(Tisp - y[k]) > 0.2:
+        u[18, k] += Kp * (Tisp - y[k])
+        
+        if u[18, k] - radP[k] > 5000:
+            u[18, k] = 5000 + radP[k]
+            
+        temp_exp[:, k + 1] = (I + dt * As) @ temp_exp[:, k]\
+            + dt * Bs @ u[:, k]
+        y[k] = Cs[1, :] @ temp_exp[:, k + 1] + Ds[1, :] @ u[:, k]
+        temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
+        (temp_imp[:, k] + dt * Bs @ u[:, k])
+
+    temp_exp[:, k + 1] = (I + dt * As) @ temp_exp[:, k]\
+        + dt * Bs @ u[:, k]
+    y[k + 1] = Cs[1, :] @ temp_exp[:, k + 1] + Ds[1, :] @ u[:, k]
+    temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
+        (temp_imp[:, k] + dt * Bs @ u[:, k])
+    u[18, k + 1] = u[18, k]
+   
+q_HVAC[k] = u[18, k] - radP
+    
+fig3, axs3 = plt.subplots(2, 2)
+
+axs3[1, 0].plot(t / 3600, temp_exp[-1, :],
+               t / 3600, T0)
+axs3[1, 0].set_xlabel('Time [hours]')
+axs3[1, 0].set_ylabel('Air temperature [°C]')
+axs3[1, 0].set_title('Explicit Euler')
+
+axs3[1, 1].plot(t / 3600, temp_imp[-1, :],
+               t / 3600, T0)
+axs3[1, 1].set_xlabel('Time [hours]')
+axs3[1, 1].set_ylabel('Air temperature [°C]')
+axs3[1, 1].set_title('Implicit Euler')
 
 #%%
 # # Interpolate weather data for time step dt

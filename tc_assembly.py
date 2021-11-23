@@ -85,8 +85,8 @@ Kp = 1000
 Qa = 2000
 Qpp = 360
 tau = 0.85
-alpha_wood = 
-alpha_beech =
+alpha_wood = 0.5
+alpha_beech = 0.5
 Ca = air['Density'] * air['Specific heat'] * V_air
 
 # conduction
@@ -529,17 +529,14 @@ y[0] = Tisp
 I = np.eye(As.shape[0])
 
 for k in range(u.shape[1] - 1):
-    while (y[k] < Tisp or y[k] > DeltaT + Tisp) and abs(Tisp - y[k]) > 0.2:
+    if (y[k] < Tisp or y[k] > DeltaT + Tisp) and abs(Tisp - y[k]) > 0.2:
         u[18, k] += Kp * (Tisp - y[k])
+        u[18, k] = u[18, k] + radP[k]
         
         if u[18, k] - radP[k] > 5000:
             u[18, k] = 5000 + radP[k]
-            
-        temp_exp[:, k + 1] = (I + dt * As) @ temp_exp[:, k]\
-            + dt * Bs @ u[:, k]
-        y[k] = Cs[1, :] @ temp_exp[:, k + 1] + Ds[1, :] @ u[:, k]
-        temp_imp[:, k + 1] = np.linalg.inv(np.eye(no_t) - dt * As) @\
-        (temp_imp[:, k] + dt * Bs @ u[:, k])
+    else:
+        u[18, k] = u[18, k]
 
     temp_exp[:, k + 1] = (I + dt * As) @ temp_exp[:, k]\
         + dt * Bs @ u[:, k]
@@ -548,7 +545,7 @@ for k in range(u.shape[1] - 1):
         (temp_imp[:, k] + dt * Bs @ u[:, k])
     u[18, k + 1] = u[18, k]
    
-q_HVAC[k] = u[18, k] - radP
+q_HVAC = u[18, :] - radP.T[:]
     
 fig3, axs3 = plt.subplots(2, 2)
 
